@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 $query = trim((string)($_GET['q'] ?? ''));
 $categoryId = max(0, (int)($_GET['category'] ?? 0));
-$products = fetch_products($productType, $query, $categoryId);
+$allProducts = fetch_products($productType, $query, $categoryId);
+$perPage = 48;
+$totalProducts = count($allProducts);
+$totalPages = max(1, (int)ceil($totalProducts / $perPage));
+$currentPage = max(1, min($totalPages, (int)($_GET['page'] ?? 1)));
+$products = array_slice($allProducts, ($currentPage - 1) * $perPage, $perPage);
 
 $categoryStmt = db()->prepare(
     'SELECT DISTINCT c.id, c.name
@@ -23,7 +28,7 @@ require dirname(__DIR__) . '/includes/header.php';
       <h1><?= e($productHeading) ?></h1>
       <p class="muted"><?= e($productLead) ?></p>
     </div>
-    <span class="chip"><?= count($products) ?> รายการ</span>
+    <span class="chip"><?= $totalProducts ?> รายการ</span>
   </div>
 
   <form class="filters" method="get">
@@ -70,6 +75,13 @@ require dirname(__DIR__) . '/includes/header.php';
       <h2>ไม่พบรายการ</h2>
       <p class="muted">ลองเปลี่ยนคำค้นหาหรือหมวดหมู่</p>
     </div>
+  <?php endif; ?>
+  <?php if ($totalPages > 1): ?>
+    <nav class="pagination" aria-label="แบ่งหน้าสินค้า">
+      <?php for ($number = 1; $number <= $totalPages; $number++): ?>
+        <a class="btn <?= $number === $currentPage ? 'btn-primary' : 'btn-ghost' ?>" href="?<?= e(http_build_query(['q' => $query, 'category' => $categoryId ?: null, 'page' => $number])) ?>"><?= $number ?></a>
+      <?php endfor; ?>
+    </nav>
   <?php endif; ?>
 </section>
 <?php require dirname(__DIR__) . '/includes/footer.php'; ?>

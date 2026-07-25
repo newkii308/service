@@ -11,7 +11,12 @@ $stmt = db()->prepare(
      ORDER BY p.sort_order, p.id DESC"
 );
 $stmt->execute([tenantId(), $productType]);
-$products = $stmt->fetchAll();
+$allProducts = $stmt->fetchAll();
+$perPage = 60;
+$totalProducts = count($allProducts);
+$totalPages = max(1, (int)ceil($totalProducts / $perPage));
+$currentPage = max(1, min($totalPages, (int)($_GET['page'] ?? 1)));
+$products = array_slice($allProducts, ($currentPage - 1) * $perPage, $perPage);
 $pageTitle = 'จัดการ ' . $config['title'];
 require __DIR__ . '/header.php';
 ?>
@@ -46,6 +51,9 @@ require __DIR__ . '/header.php';
     </div>
   <?php else: ?>
     <div class="card empty-state"><h2>ยังไม่มีรายการในโมดูลนี้</h2><a class="btn btn-primary" href="edit.php">เพิ่มรายการแรก</a></div>
+  <?php endif; ?>
+  <?php if ($totalPages > 1): ?>
+    <nav class="pagination" aria-label="แบ่งหน้าสินค้า"><?php for ($number = 1; $number <= $totalPages; $number++): ?><a class="btn <?= $number === $currentPage ? 'btn-primary' : 'btn-ghost' ?>" href="?page=<?= $number ?>"><?= $number ?></a><?php endfor; ?></nav>
   <?php endif; ?>
 </section>
 <?php require __DIR__ . '/footer.php'; ?>

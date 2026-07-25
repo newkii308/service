@@ -695,18 +695,30 @@ function h_topups(): void {
 function h_admin_stats(): void {
     requireAdmin();
     $pdo = db();
-    $members   = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='member'")->fetchColumn();
-    $orders    = (int)$pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-    $revenue   = (float)$pdo->query("SELECT COALESCE(SUM(price),0) FROM orders")->fetchColumn();
-    $topupSum  = (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM topups WHERE status='success'")->fetchColumn();
-    $products  = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
-    $lowStock  = $pdo->query(
+    $scalar = static function (string $sql) use ($pdo) {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([tenantId()]);
+        return $stmt->fetchColumn();
+    };
+    $members   = (int)$scalar("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND role='member'");
+    $orders    = (int)$scalar('SELECT COUNT(*) FROM orders WHERE tenant_id = ?');
+    $revenue   = (float)$scalar("SELECT COALESCE(SUM(price),0) FROM orders WHERE tenant_id = ? AND status != 'cancelled'");
+    $topupSum  = (float)$scalar("SELECT COALESCE(SUM(amount),0) FROM topups WHERE tenant_id = ? AND status='success'");
+    $products  = (int)$scalar('SELECT COUNT(*) FROM products WHERE tenant_id = ?');
+    $lowStockStmt = $pdo->prepare(
         "SELECT p.id, p.name,
-                (SELECT COUNT(*) FROM product_codes pc WHERE pc.product_id=p.id AND pc.status='available') AS stock
-         FROM products p WHERE p.type='code' HAVING stock <= 3 ORDER BY stock ASC LIMIT 10")->fetchAll();
-    $recentOrders = $pdo->query(
+                (SELECT COUNT(*) FROM product_codes pc
+                 WHERE pc.product_id=p.id AND pc.tenant_id=p.tenant_id AND pc.status='available') AS stock
+         FROM products p WHERE p.tenant_id = ? AND p.type='code'
+         HAVING stock <= 3 ORDER BY stock ASC LIMIT 10");
+    $lowStockStmt->execute([tenantId()]);
+    $lowStock = $lowStockStmt->fetchAll();
+    $recentStmt = $pdo->prepare(
         "SELECT o.id, o.product_name, o.price, o.created_at, u.username
-         FROM orders o JOIN users u ON u.id=o.user_id ORDER BY o.id DESC LIMIT 8")->fetchAll();
+         FROM orders o JOIN users u ON u.id=o.user_id AND u.tenant_id=o.tenant_id
+         WHERE o.tenant_id = ? ORDER BY o.id DESC LIMIT 8");
+    $recentStmt->execute([tenantId()]);
+    $recentOrders = $recentStmt->fetchAll();
 
     jsonOk([
         'members'  => $members,
@@ -933,8 +945,8 @@ function h_admin_collection_item_remove(): void {
 function h_admin_codes(): void {
     requireAdmin();
     $pid = (int)($_GET['product_id'] ?? 0);
-    $stmt = db()->prepare('SELECT id, content, status, order_id, created_at, sold_at FROM product_codes WHERE product_id = ? ORDER BY id DESC');
-    $stmt->execute([$pid]);
+    $stmt = db()->prepare('SELECT id, content, status, order_id, created_at, sold_at FROM product_codes WHERE product_id = ? AND tenant_id = ? ORDER BY id DESC');
+    $stmt->execute([$pid, tenantId()]);
     jsonOk($stmt->fetchAll());
 }
 
@@ -944,6 +956,9 @@ function h_admin_codes_add(): void {
     $bulk = (string)field('codes');
     if ($pid <= 0)   jsonError('ไม่พบสินค้า');
     if (trim($bulk) === '') jsonError('กรุณาใส่โค้ด (บรรทัดละ 1 โค้ด)');
+    $product = db()->prepare("SELECT id FROM products WHERE id = ? AND tenant_id = ? AND type = 'code' LIMIT 1");
+    $product->execute([$pid, tenantId()]);
+    if (!$product->fetch()) jsonError('ไม่พบสินค้าในร้านนี้');
 
     $lines = preg_split('/\r\n|\r|\n/', $bulk);
     $stmt  = db()->prepare("INSERT INTO product_codes (tenant_id, product_id, content, status) VALUES (?, ?, ?, 'available')");
@@ -960,7 +975,7 @@ function h_admin_codes_add(): void {
 function h_admin_code_delete(): void {
     requireAdmin();
     $id = (int)field('id');
-    db()->prepare("DELETE FROM product_codes WHERE id = ? AND status = 'available'")->execute([$id]);
+    db()->prepare("DELETE FROM product_codes WHERE id = ? AND tenant_id = ? AND status = 'available'")->execute([$id, tenantId()]);
     jsonOk([], 'ลบโค้ดแล้ว');
 }
 

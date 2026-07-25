@@ -51,6 +51,7 @@ AddCharset UTF-8 .php .js .css .html .json .xml .svg
 
   # Backward-compatible API and administrator entry points.
   RewriteRule ^api/?$ backend/api/index.php [L,QSA]
+  RewriteRule ^api/index\.php$ backend/api/index.php [L,QSA]
   RewriteRule ^api/(.+)$ backend/api/index.php?r=$1 [L,QSA]
   RewriteRule ^admin/?$ backend/dashboard/index.php [L,QSA]
 </IfModule>
