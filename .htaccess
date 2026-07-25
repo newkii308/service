@@ -1,0 +1,56 @@
+DirectoryIndex index.php
+Options -Indexes
+
+AddType application/javascript .js
+AddType application/json .json
+AddType image/svg+xml .svg
+AddCharset UTF-8 .php .js .css .html .json .xml .svg
+
+<FilesMatch "(^\.|\.sql$|\.md$|\.ini$|\.log$|\.bak$)">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Historical public URLs now point to explicit PHP page scripts.
+  RewriteRule ^products/?$ frontend/products/game-codes/index.php [L,QSA]
+  RewriteRule ^refills/?$ frontend/products/game-refills/index.php [L,QSA]
+  RewriteRule ^streaming/?$ frontend/products/streaming-accounts/index.php [L,QSA]
+  RewriteRule ^social/?$ frontend/products/social-boost/index.php [L,QSA]
+  RewriteRule ^otp/?$ frontend/products/sms-otp/index.php [L,QSA]
+  RewriteRule ^otp-apps/?$ frontend/products/app-otp/index.php [L,QSA]
+  RewriteRule ^mail/?$ frontend/products/mail-rental/index.php [L,QSA]
+  RewriteRule ^product/([0-9]+)/?$ frontend/products/resolve.php?id=$1 [L,QSA]
+  RewriteRule ^search/?$ frontend/search/index.php [L,QSA]
+  RewriteRule ^login/?$ frontend/auth/login/index.php [L,QSA]
+  RewriteRule ^register/?$ frontend/auth/register/index.php [L,QSA]
+  RewriteRule ^profile/?$ frontend/account/profile/index.php [L,QSA]
+  RewriteRule ^account/?$ frontend/account/settings/index.php [L,QSA]
+  RewriteRule ^orders/?$ frontend/account/orders/index.php [L,QSA]
+  RewriteRule ^topup/?$ frontend/account/topup/index.php [L,QSA]
+  RewriteRule ^contact/?$ frontend/contact/index.php [L,QSA]
+
+  # Backward-compatible API and administrator entry points.
+  RewriteRule ^api/?$ backend/api/index.php [L,QSA]
+  RewriteRule ^api/(.+)$ backend/api/index.php?r=$1 [L,QSA]
+  RewriteRule ^admin/?$ backend/dashboard/index.php [L,QSA]
+</IfModule>

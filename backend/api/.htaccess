@@ -1,0 +1,7 @@
+Options -Indexes
+
+# The compatibility API exposes only index.php. All business/configuration
+# includes are callable from PHP, never directly over HTTP.
+<FilesMatch "^(?!index\.php$).*\.php$">
+  Require all denied
+</FilesMatch>
