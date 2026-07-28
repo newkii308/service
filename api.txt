@@ -1,0 +1,111 @@
+{
+  "amount": 1000
+}
+
+<?php
+ $curl = curl_init();
+curl_setopt_array($curl, array(
+  CURLOPT_URL => 'https://jvix.xyz/api/v1/oneplay/generate',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_CUSTOMREQUEST => 'POST',
+  CURLOPT_POSTFIELDS => json_encode(array(
+    "amount" => 1000
+  )),
+  CURLOPT_HTTPHEADER => array(
+    'Authorization: Bearer YOUR_API_KEY',
+    'Content-Type: application/json'
+  ),
+));
+ $response = curl_exec($curl);
+curl_close($curl);
+echo $response;
+
+
+
+{
+  "status": "success",
+  "data": {
+    "transactionId": "OnePlay-10-...",
+    "qr_url": "https://api.qrserver.com/...",
+    "payload": "000201....",
+    "amount": "1,000",
+    "amount_base": "1,000",
+    "offset": 1,
+    "currency": "LAK",
+    "provider": "oneplay",
+    "expires_at": 1764298489
+  }
+}
+
+
+{
+  "status": "error",
+  "message": "ການຕັ້ງຄ່າ OnePlay ຍັງບໍ່ຄົບ",
+  "code": "ONEPLAY_NOT_CONFIGURED"
+}
+
+
+
+{
+  "transactionId": "OnePlay-10-..."
+}
+
+
+
+<?php
+ $curl = curl_init();
+curl_setopt_array($curl, array(
+  CURLOPT_URL => 'https://jvix.xyz/api/v1/oneplay/check',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_CUSTOMREQUEST => 'POST',
+  CURLOPT_POSTFIELDS => json_encode(array(
+    "transactionId" => "OnePlay-10-..."
+  )),
+  CURLOPT_HTTPHEADER => array(
+    'Authorization: Bearer YOUR_API_KEY',
+    'Content-Type: application/json'
+  ),
+));
+ $response = curl_exec($curl);
+curl_close($curl);
+echo $response;
+{
+  "status": "success",
+  "message": "ຈ່າຍເງິນສຳເລັດ",
+  "transactionId": "OnePlay-10-...",
+  "amount": "1,000",
+  "currency": "LAK",
+  "provider": "oneplay"
+}
+
+
+{
+  "status": "pending",
+  "message": "ກຳລັງລໍຖ້າການຈ່າຍ",
+  "transactionId": "OnePlay-10-...",
+  "amount": "1,000",
+  "currency": "LAK",
+  "provider": "oneplay",
+  "time_remaining": 234
+}
+
+
+
+
+{
+  "status": "error",
+  "message": "ທຸລະກຳໝົດອາຍຸ",
+  "code": "TRANSACTION_EXPIRED"
+}
+
+MISSING_API_KEY	ບໍ່ພົບ API Key ໃນຄຳຂໍ	400
+INVALID_API_KEY	API Key ບໍ່ຖືກຕ້ອງ	401
+API_KEY_EXPIRED	API Key ໝົດອາຍຸ	401
+MISSING_AMOUNT	ບໍ່ໄດ້ລະບຸຈຳນວນເງິນ	400
+INVALID_AMOUNT	ຈຳນວນເງິນບໍ່ຖືກຕ້ອງ	400
+MISSING_TRANSACTION_ID	ບໍ່ໄດ້ລະບຸ Transaction ID	400
+TRANSACTION_NOT_FOUND	ບໍ່ພົບທຸລະກຳ	404
+TRANSACTION_EXPIRED	ທຸລະກຳໝົດອາຍຸ	400
+INTERNAL_ERROR	ຂໍ້ຜິດພາດພາຍໃນລະບົບ	500
+
+
